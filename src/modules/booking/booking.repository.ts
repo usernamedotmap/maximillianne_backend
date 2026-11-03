@@ -26,6 +26,37 @@ export const findBookingId = (id: string, db: DbClient = prisma) =>
     },
   });
 
+export const findBookingByTrackingReference = (
+  trackingReference: string,
+  db: DbClient = prisma,
+) =>
+  db.booking.findUnique({
+    where: { trackingReference },
+    include: { guest: true, payment: true },
+  });
+
+export const findPublicBookingStatus = (
+  trackingReference: string,
+  db: DbClient = prisma,
+) =>
+  db.booking.findUnique({
+    where: { trackingReference },
+    select: {
+      trackingReference: true,
+      checkIn: true,
+      checkOut: true,
+      status: true,
+      expiresAt: true,
+      guest: { select: { fullName: true } },
+      payment: {
+        select: {
+          verified: true,
+          proofFileKey: true,
+        },
+      },
+    },
+  });
+
 export const findBookingList = (
   status: BookingStatus,
   page: number,

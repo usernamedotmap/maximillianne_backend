@@ -2,6 +2,7 @@
 
 model Booking {
     id String @id @default(uuid()) @db.Uuid
+    trackingReference String @unique @map("tracking_reference") @db.Uuid
     guestId String @map("guest_id") @db.Uuid
     checkIn DateTime @map("check_in") @db.Date
     checkOut DateTime @map("check_out") @db.Date

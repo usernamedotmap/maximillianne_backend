@@ -113,7 +113,7 @@ export const approvedBookingService = (
   propertyId: number = DEFAULT_PROPERTY_ID,
   options?: ApprovedBookingOptions,
 ) =>
-  prisma.$transaction(async (tx) => {
+  prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // This lock makes the overlap check and approval atomic against all date claims.
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
     await bookingRepository.expirePendingBookings(new Date(), tx);
@@ -224,7 +224,7 @@ export const approvedBookingService = (
   }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 
 export const rejectBookingService = (id: string, propertyId: number = DEFAULT_PROPERTY_ID) =>
-  prisma.$transaction(async (tx) => {
+  prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
     await bookingRepository.expirePendingBookings(new Date(), tx);
     const booking = await bookingRepository.findBookingId(id, tx);
@@ -244,7 +244,7 @@ export const rejectBookingService = (id: string, propertyId: number = DEFAULT_PR
   }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 
 export const cancelBookingService = (id: string, input: CancelBookingInput, propertyId: number = DEFAULT_PROPERTY_ID) =>
-  prisma.$transaction(async (tx) => {
+  prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
     await bookingRepository.expirePendingBookings(new Date(), tx);
     const booking = await bookingRepository.findBookingId(id, tx);
@@ -294,7 +294,7 @@ export const createBlockDateService = async (input: BlockDatesInput, propertyId:
     throw Errors.validation("Start date cannot be  after end date");
   }
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Block creation claims the same unit dates as a booking, so it takes the same lock.
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
     await bookingRepository.expirePendingBookings(new Date(), tx);
@@ -326,7 +326,7 @@ export const deleteBlockDateService = async (
   id: string,
   propertyId: number = DEFAULT_PROPERTY_ID,
 ) => {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
     const blockedDate = await blockDateRepository.findBlockedDateById(id, tx);
     if (!blockedDate) throw Errors.notFound("Block dates");

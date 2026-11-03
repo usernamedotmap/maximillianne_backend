@@ -28,3 +28,17 @@ export const getBookingPaymentDetailsController = async (
     booking,
   });
 };
+
+export const getPublicBookingStatusController = async (
+  req: Request,
+  res: Response,
+) => {
+  const { id } = BookingIdParams.parse(req.params);
+  const booking = await bookingService.getPublicBookingStatusService(id);
+
+  res.setHeader("Cache-Control", "no-store");
+  res.status(HttpStatus.OK).json({
+    message: "Booking status retrieved successfully",
+    booking,
+  });
+};

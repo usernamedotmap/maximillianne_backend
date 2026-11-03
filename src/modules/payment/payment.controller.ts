@@ -30,8 +30,7 @@ export const submitPublicPaymentProof = async (
   const { id } = BookingIdParams.parse(req.params);
   const file = req.file!;
 
-  const { payment, booking } =
-    await paymentService.submitPaymentProofService({
+  const { booking } = await paymentService.submitPaymentProofService({
       id,
       file,
       propertyId: DEFAULT_PROPERTY_ID,
@@ -39,8 +38,7 @@ export const submitPublicPaymentProof = async (
 
   res.status(HttpStatus.CREATED).json({
     message: "Payment proof uploaded successfully. Awaiting host verification.",
-    payment,
-    booking,
+    booking: { status: booking.status },
   });
 };
 

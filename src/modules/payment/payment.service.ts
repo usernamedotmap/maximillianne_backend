@@ -39,11 +39,16 @@ export const verifyPaymentService = async (paymentId: string) => {
 export const submitPaymentProofService = async (
   input: SubmitPaymentProofInput,
 ) => {
-  const { id: bookingId, file, amountStr } = input;
+  const { id: requestedBookingId, file, amountStr } = input;
   const propertyId = input.propertyId ?? DEFAULT_PROPERTY_ID;
-  const booking = await prisma.$transaction(async (tx) => {
+  const booking = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
-    const current = await bookingRepository.findBookingId(bookingId, tx);
+    const current =
+      (await bookingRepository.findBookingByTrackingReference(
+        requestedBookingId,
+        tx,
+      )) ??
+      (await bookingRepository.findBookingId(requestedBookingId, tx));
     if (!current) throw Errors.notFound("Booking");
     if (current.status !== "pending" || !current.expiresAt || current.expiresAt <= new Date()) {
       throw Errors.badRequest(
@@ -57,6 +62,7 @@ export const submitPaymentProofService = async (
     }
     return current;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
+  const bookingId = booking.id;
 
   let paymentAmount: number;
   if (amountStr && !isNaN(Number(amountStr)) && Number(amountStr) > 0) {
@@ -71,7 +77,7 @@ export const submitPaymentProofService = async (
 
   await uploadPaymentProofToR2(proofFileKey, file.buffer, file.mimetype);
 
-  const paymentRecord = await prisma.$transaction(async (tx) => {
+  const paymentRecord = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Revalidate under the same lock after the external upload; it may have crossed expiry.
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
     const current = await bookingRepository.findBookingId(bookingId, tx);

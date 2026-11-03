@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { CreateBookingRequestInput } from "../../../dto/booking.dto.js";
 import * as guestRepository from "../../guest/guest.repository.js";
 import * as bookingRepository from "../../booking/booking.repository.js";
@@ -78,6 +79,7 @@ export const createBookingsService = async (
 
     const booking = await bookingRepository.createBooking(
       {
+        trackingReference: randomUUID(),
         guest: {
           connect: { id: guest.id },
         },
@@ -94,7 +96,8 @@ export const createBookingsService = async (
     );
 
     return {
-      bookingId: booking.id,
+      bookingId: booking.trackingReference,
+      trackingReference: booking.trackingReference,
       status: booking.status,
       checkIn: booking.checkIn,
       checkOut: booking.checkOut,
@@ -124,7 +127,10 @@ export const getBookingPaymentDetailsService = async (
   const booking = await prisma.$transaction(async (tx) => {
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
     await bookingRepository.expirePendingBookings(now, tx);
-    return bookingRepository.findBookingId(bookingId, tx);
+    return (
+      (await bookingRepository.findBookingByTrackingReference(bookingId, tx)) ??
+      (await bookingRepository.findBookingId(bookingId, tx))
+    );
   }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 
   if (!booking) {
@@ -141,7 +147,8 @@ export const getBookingPaymentDetailsService = async (
     booking.expiresAt > now;
 
   return {
-    bookingId: booking.id,
+    bookingId: booking.trackingReference,
+    trackingReference: booking.trackingReference,
     status: booking.status,
     checkIn: booking.checkIn.toISOString().slice(0, 10),
     checkOut: booking.checkOut.toISOString().slice(0, 10),
@@ -152,5 +159,39 @@ export const getBookingPaymentDetailsService = async (
     canUploadProof: isActivePending && !paymentVerified,
     paymentSubmitted,
     paymentVerified,
+  };
+};
+
+export const getPublicBookingStatusService = async (
+  trackingReference: string,
+) => {
+  const now = new Date();
+  const booking =
+    await bookingRepository.findPublicBookingStatus(trackingReference);
+
+  if (!booking) {
+    throw Errors.notFound("Booking");
+  }
+
+  const paymentVerified = booking.payment.some((payment) => payment.verified);
+  const paymentSubmitted = booking.payment.some(
+    (payment) => payment.proofFileKey !== null,
+  );
+
+  return {
+    id: booking.trackingReference,
+    checkIn: booking.checkIn.toISOString().slice(0, 10),
+    checkOut: booking.checkOut.toISOString().slice(0, 10),
+    status:
+      booking.status === "pending" &&
+      (booking.expiresAt === null || booking.expiresAt <= now)
+        ? "expired"
+        : booking.status,
+    guestName: booking.guest.fullName,
+    paymentStatus: paymentVerified
+      ? "verified"
+      : paymentSubmitted
+        ? "pending_verification"
+        : "not_submitted",
   };
 };
