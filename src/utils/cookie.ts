@@ -16,7 +16,7 @@ export const setAuthCookies = (res: Response, accessToken: string): void => {
     ...options,
     maxAge: ENV.ACCESS_TOKEN_COOKIE_MAX_AGE_MS,
   });
-};
+};  
 
 export const clearAuthCookies = (res: Response): void => {
   const options = getCookieOptions();
