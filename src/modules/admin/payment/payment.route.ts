@@ -6,7 +6,7 @@ import { uploadPaymentProof } from "../../../middleware/upload.js";
 
 const paymentRoute = Router();
 
-paymentRoute.use(asyncHandler(authenticate));
+paymentRoute.use(authenticate);
 paymentRoute.get("/:id/proof-url", asyncHandler(getPaymentProofUrl));
 paymentRoute.patch("/:id/verify", asyncHandler(verifyPayment))
 paymentRoute.post("/:id/payment-proof", uploadPaymentProof, asyncHandler(submitPaymentProof));

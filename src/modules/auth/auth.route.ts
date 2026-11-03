@@ -7,7 +7,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 const authRoutes = Router();
 
 authRoutes.post("/login", asyncHandler(loginController));
-authRoutes.get("/me", asyncHandler(authenticate), asyncHandler(getMeController));
+authRoutes.get("/me", authenticate, asyncHandler(getMeController));
 authRoutes.post("/logout", asyncHandler(logoutcontroller));
  
 export default authRoutes;

@@ -16,7 +16,7 @@ import { authenticate } from "../../../middleware/authenticate.js";
 
 const bookingRoute = Router();
 
-bookingRoute.use(asyncHandler(authenticate));
+bookingRoute.use(authenticate);
 
 bookingRoute.get("/summary", asyncHandler(getAdminDashboardSummary));
 bookingRoute.get("/", asyncHandler(getBookingsByAdmin));
