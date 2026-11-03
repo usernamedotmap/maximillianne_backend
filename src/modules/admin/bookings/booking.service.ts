@@ -10,6 +10,7 @@ import {
 import * as bookingRepository from "../../booking/booking.repository.js";
 import * as blockDateRepository from "../../block-dates/blocked-dates.repository.js";
 import { DEFAULT_PROPERTY_ID } from "../../../config/property.js";
+import { expirePendingBookings } from "../../booking/booking-expiry.service.js";
 
 const CANCELLABLE_STATUSES: readonly BookingStatus[] = ["pending", "approved"];
 
@@ -18,6 +19,7 @@ const CANCELLABLE_STATUSES: readonly BookingStatus[] = ["pending", "approved"];
 export const getBookingsByAdminService = async (
   query: GetBookingQueryInput,
 ) => {
+  await expirePendingBookings();
   const { status, page, limit } = query;
 
   const [bookings, total] = await Promise.all([
@@ -37,6 +39,8 @@ export const getBookingsByAdminService = async (
 };
 
 export const getAdminDashboardSummaryService = async () => {
+  await expirePendingBookings();
+
   const now = new Date();
   const today = new Date(Date.UTC(
     now.getUTCFullYear(),
@@ -61,15 +65,12 @@ export const getAdminDashboardSummaryService = async () => {
 };
 
 export const getBookingIdByAdminService = async (id: string) => {
+  await expirePendingBookings();
   const booking = await bookingRepository.findBookingId(id);
 
   if (!booking) throw Errors.notFound("Booking");
 
-  const isExpiredPending =
-    booking.status === "pending" &&
-    (!booking.expiresAt || booking.expiresAt <= new Date());
-
-  return isExpiredPending ? { ...booking, status: "expired" as const } : booking;
+  return booking;
 };
 
 // ---------- Blocked date reads ----------
@@ -115,7 +116,7 @@ export const approvedBookingService = (
   prisma.$transaction(async (tx) => {
     // This lock makes the overlap check and approval atomic against all date claims.
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
-    await bookingRepository.expirePendingBooking(id, new Date(), tx);
+    await bookingRepository.expirePendingBookings(new Date(), tx);
     const booking = await bookingRepository.findBookingId(id, tx);
     if (!booking) throw Errors.notFound("Booking");
 
@@ -225,7 +226,7 @@ export const approvedBookingService = (
 export const rejectBookingService = (id: string, propertyId: number = DEFAULT_PROPERTY_ID) =>
   prisma.$transaction(async (tx) => {
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
-    await bookingRepository.expirePendingBooking(id, new Date(), tx);
+    await bookingRepository.expirePendingBookings(new Date(), tx);
     const booking = await bookingRepository.findBookingId(id, tx);
     if (!booking) throw Errors.notFound("Booking");
 
@@ -245,7 +246,7 @@ export const rejectBookingService = (id: string, propertyId: number = DEFAULT_PR
 export const cancelBookingService = (id: string, input: CancelBookingInput, propertyId: number = DEFAULT_PROPERTY_ID) =>
   prisma.$transaction(async (tx) => {
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
-    await bookingRepository.expirePendingBooking(id, new Date(), tx);
+    await bookingRepository.expirePendingBookings(new Date(), tx);
     const booking = await bookingRepository.findBookingId(id, tx);
     if (!booking) throw Errors.notFound("Booking");
 
@@ -296,6 +297,7 @@ export const createBlockDateService = async (input: BlockDatesInput, propertyId:
   return prisma.$transaction(async (tx) => {
     // Block creation claims the same unit dates as a booking, so it takes the same lock.
     await bookingRepository.lockPropertyAvailability(propertyId, tx);
+    await bookingRepository.expirePendingBookings(new Date(), tx);
     const approvedBookings = await bookingRepository.findOverlappingBookings(
       {
         start,

@@ -5,7 +5,7 @@ import { connectDb } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.route.js";
 import { errorHandler } from "./errors/errorHandler.js";
-import testRoute from "./test/routes/test.route.js";
+// import testRoute from "./test/routes/test.route.js";
 import publicRoute from "./modules/public/public.route.js";
 import adminRoutes from "./modules/admin/admin.route.js";
 import { startBookingExpiryWorker } from "./modules/booking/booking-expiry.service.js";
@@ -40,7 +40,7 @@ app.use(`${BASE_PATH}/auth`, authRoutes);
 // ------- public api --------- //
 app.use(`${BASE_PATH}`, publicRoute);
 
-app.use(testRoute);
+// app.use(testRoute);
 
 app.use("/api/health", (req, res) => {
   const path = req.path;

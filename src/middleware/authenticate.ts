@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "../utils/jwt.js";
-import { AdminUser } from "@prisma/client";
 import { Errors } from "../errors/appError.js";
 
 const extractToken = (req: Request): string | null => {
@@ -18,7 +17,6 @@ const extractToken = (req: Request): string | null => {
 
 export const authenticate = async (
   req: Request,
-  res: Response,
   next: NextFunction,
 ) => {
   const token = extractToken(req);
