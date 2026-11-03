@@ -1,0 +1,12 @@
+enum BookingStatus {
+    pending
+    approved
+    rejected
+    cancelled
+    expired
+}
+
+enum PaymentType {
+    downpayment
+    full_payment
+}

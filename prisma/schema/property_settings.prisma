@@ -1,0 +1,14 @@
+
+
+model PropertySettings {
+    id Int @id @default(1)
+    name String @default("Maximilliane's Haven") @db.VarChar(100)
+    description String? @db.Text
+    nightlyRate Decimal @default(2500.00) @map("nightly_rate") @db.Decimal(10, 2)
+    maxGuests Int @default(4) @map("max_guests") @db.SmallInt
+    checkInTime String @default("14:00") @map("check_in_time") @db.VarChar(10)
+    checkOutTime String @default("12:00") @map("check_out_time") @db.VarChar(10)
+    updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+    @@map("property_settings")
+}

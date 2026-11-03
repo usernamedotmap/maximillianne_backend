@@ -1,0 +1,12 @@
+
+
+model BlockedDate {
+    id String @id @default(uuid()) @db.Uuid
+    startDate DateTime @map("start_date") @db.Date
+    endDate DateTime @map("end_date") @db.Date  
+    reason String? @db.VarChar(255)
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+    @@index([startDate, endDate])
+    @@map("blocked_date")
+}
