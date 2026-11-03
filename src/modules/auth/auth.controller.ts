@@ -30,7 +30,7 @@ export const getMeController = async (req: Request, res: Response) => {
   });
 };
 
-export const logoutcontroller = async (req: Request, res: Response) => {
+export const logoutcontroller = async (_req: Request, res: Response) => {
   clearAuthCookies(res);
 
   res.status(HttpStatus.OK).json({
