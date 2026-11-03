@@ -15,7 +15,7 @@ const extractToken = (req: Request): string | null => {
   return null;
 };
 
-export const authenticate = async (
+export const authenticate = (
   req: Request,
   res: Response,
   next: NextFunction,
